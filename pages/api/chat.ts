@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo-0125", // Make sure this matches the model you're intending to use
+          model: "gpt-3.5-turbo", // Make sure this matches the model you're intending to use
           prompt: question,
           max_tokens: 150,
           temperature: 0.7,
