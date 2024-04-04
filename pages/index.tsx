@@ -15,24 +15,34 @@ const Home = () => {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setIsLoading(true);
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ question }),
-    });
-    const data = await response.json();
-    setAnswer(data.answer);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      setAnswer(data.answer);
+    } catch (error) {
+      console.error('Failed to fetch answer:', error);
+      setAnswer('Failed to fetch answer. Please try again.');
+    }
     setIsLoading(false);
   }
 
   return (
-    <div style={{ backgroundColor: '#f0f0f0', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-      <h1 style={{ color: '#333' }}>AI Chatbot for Teachers</h1>
+    <div style={{ backgroundColor: '#282828', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+      <h1 style={{ color: '#a9a9a9' }}>AI Chatbot for Teachers</h1>
       <div style={{ margin: '20px' }}>
         {predefinedQuestions.map(({ id, text }) => (
-          <button key={id} onClick={() => setQuestion(text)} style={{ background: '#d0d0d0', border: 'none', borderRadius: '20px', padding: '10px 20px', margin: '5px', cursor: 'pointer' }}>
+          <button key={id} onClick={() => setQuestion(text)} style={{ background: '#007bff', border: 'none', borderRadius: '20px', padding: '10px 20px', margin: '5px', cursor: 'pointer' }}>
             {text}
           </button>
         ))}
