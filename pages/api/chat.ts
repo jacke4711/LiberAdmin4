@@ -5,7 +5,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       const { question } = req.body;
-      const openAIResponse = await fetch("https://api.openai.com/v1/completions", {
+      const openAIResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
