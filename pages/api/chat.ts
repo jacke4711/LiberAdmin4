@@ -13,7 +13,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         body: JSON.stringify({
           model: "gpt-3.5-turbo", // Make sure this matches the model you're intending to use
-          prompt: question,
+          // prompt: question, seems to not work / AR
+          messages: [{ // Use the messages array for prompts
+            "role": "system",
+            "content": "You are a helpful assistant speaking like Yoda."
+          },{
+            "role": "user",
+            "content": question
+          }],
           max_tokens: 150,
           temperature: 0.7,
           top_p: 1,
@@ -25,8 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const openAIData = await openAIResponse.json();
 
       // Check if the response has the expected data
-      if (openAIData.choices && openAIData.choices.length > 0 && openAIData.choices[0].text) {
-        res.status(200).json({ answer: openAIData.choices[0].text.trim() });
+      if (openAIData.choices && openAIData.choices.length > 0 && openAIData.choices[0].message) {
+        res.status(200).json({ answer: openAIData.choices[0].message.content.trim() });
       } else {
         // Log for debugging
         console.error('Unexpected response structure:', openAIData);
