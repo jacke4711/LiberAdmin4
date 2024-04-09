@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           // prompt: question, seems to not work / AR
           messages: [{ // Use the messages array for prompts
             "role": "system",
-            "content": "You are a helpful assistant speaking like Yoda."
+            "content": "You are a helpful assistant speaking like Arnold Schwarzenegger."
           },{
             "role": "user",
             "content": question
