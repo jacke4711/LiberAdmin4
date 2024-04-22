@@ -213,12 +213,17 @@ const createThread = (threadId: string) => {
     throw new Error("Function not implemented.");
 };
 
-export const removeThread = (threadId: string) => {
-    console.log(`Removing thread with ID: ${threadId}`);
+export async function removeThread(threadId: string) {
+    //console.log(`Removing thread with ID: ${threadId}`);
     // Add more logic here
-    throw new Error("Function not implemented.");
-};
 
+    try {
+        const thread = await openai.beta.threads.del(threadId);
+        return thread;
+    } catch (error) {
+        console.error("Error removing thread:", error);
+    }
+};
 
 
 function getCurrentDateAndTime(): any {
