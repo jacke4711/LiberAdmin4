@@ -1,3 +1,4 @@
+// AR: I am leaving this for future reference. Adding assistant.ts which should be used instead.
 // pages/api/chat.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 

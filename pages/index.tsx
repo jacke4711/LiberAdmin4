@@ -17,7 +17,7 @@ const Home = () => {
     if (!question.trim()) return;
     setIsLoading(true);
     setMessages(prev => [...prev, {type: 'user', text: question}, {type: 'bot', text: 'Processing...'}]);
-    const response = await fetch('/api/chat', {
+    const response = await fetch('/api/assistant', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
