@@ -4,12 +4,12 @@ import type { Session } from "next-auth"
 import { useSession, getSession } from "next-auth/react"
 //import "../styles/globals.css";
 import styles from '../styles/LiberAdmin.module.css';
-
+import Image from 'next/image';
 
 
 const Home = () => {
   const [question, setQuestion] = useState<string>('');
-  const [messages, setMessages] = useState<Array<{type: string, text: string}>>([]);
+  const [messages, setMessages] = useState<Array<{ type: string, text: string }>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const endOfMessagesRef = useRef<null | HTMLDivElement>(null);
 
@@ -31,7 +31,7 @@ const Home = () => {
   const sendMessage = async () => {
     if (!question.trim()) return;
     setIsLoading(true);
-    setMessages(prev => [...prev, {type: 'user', text: question}, {type: 'bot', text: 'Processing...'}]);
+    setMessages(prev => [...prev, { type: 'user', text: question }, { type: 'bot', text: 'Processing...' }]);
     const response = await fetch('/api/assistant', {
       method: 'POST',
       headers: {
@@ -41,7 +41,7 @@ const Home = () => {
     });
     const data = await response.json();
     setIsLoading(false);
-    setMessages(prev => [...prev.slice(0, -1), {type: 'bot', text: data.answer || 'Error getting response'}]);
+    setMessages(prev => [...prev.slice(0, -1), { type: 'bot', text: data.answer || 'Error getting response' }]);
     setQuestion('');
   };
 
@@ -61,12 +61,14 @@ const Home = () => {
     <div className={styles['app-container']}>
       <div className={styles.sidebar}>
         Threads or Other Information
-        <img
-            src={session?.user?.image as string}
-            className={styles['small-rounded-image']}>
-
-        </img>
-            {session?.user?.name}
+        <Image
+          src={session?.user?.image as string}
+          alt="User image"
+          width={50} // replace with your desired width
+          height={50} // replace with your desired height
+          className={styles['small-rounded-image']}
+        />
+        {session?.user?.name}
       </div>
       <div className={styles['chat-container']}>
         <div className={styles.messages}>
