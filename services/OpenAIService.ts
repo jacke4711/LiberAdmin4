@@ -247,3 +247,12 @@ function getCurrentDateAndTime(): any {
     return formattedDateTime;
 }
 
+function calculateDaysBetweenDates(date1: Date, date2: Date): number {
+    // Calculate the difference in milliseconds
+    const differenceMs = date2.getTime() - date1.getTime();
+
+    // Convert the difference to days
+    const differenceDays = differenceMs / (1000 * 60 * 60 * 24);
+
+    return differenceDays;
+}
