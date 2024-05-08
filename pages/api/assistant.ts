@@ -4,20 +4,42 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import * as OpenAIService from '../../services/OpenAIService'
+import  authOptions  from '@/auth';
+import { getServerSession } from 'next-auth';
+import LokiUserThreadService from '@/services/LokiUserThreadService';
+//import { getSession } from "next-auth/react"
 
+const lokiUserThreadService = new LokiUserThreadService();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  //const session = await getSession({ req: req })//getServerSession(authOptions);
+  const session = await getServerSession(req, res, authOptions);
+  
+
+  if (!session || session.user === null || session.user?.email === null) {
+    //redirect('/api/auth/signin?callbackUrl=/protected');
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Must be logged in to use the assistant`);
+    return;
+  }
+  
   if (req.method === 'POST') {
     try {
       const assistantId = process.env.ASSISTANT_ID;
-      const threadId = process.env.THREAD_ID;
-      const response : string[] = [];
+      const response : OpenAIService.Message[] = [];
       const message = req.body.question;
+      let threadId = req.body.threadId;
       
       console.log(`Sending message <${message}> to thread with ID: ${threadId}`);
-      // Add logic to remove a thread
-      //console.log(thread);
-      if (assistantId != undefined && threadId != undefined) { 
+      // Create a thread if it does not exist
+      if (threadId === undefined || threadId === "") {
+        threadId = await OpenAIService.createThread();
+        // Save the threadId for the current user
+        let userId = session?.user?.email ? session?.user?.email : ""; // Checked above so should be safe, but still need to check  
+        lokiUserThreadService.addUserThread(userId, threadId, new Date().toISOString() + " - " + message); // TODO: Better title needed
+      }
+
+      if (assistantId != undefined) { 
           await OpenAIService.sendMessage(threadId, assistantId, <OpenAIService.Message>{role: 'user', content: message});
           
           // Show the messages
@@ -25,19 +47,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   
           if(messages.length > 1) {
             //response.push(messages[1]);
-            response.push(messages[0].content);
+            response.push(messages[0]);
           }
           else {
               console.error("No answer from the OpenAI service")
           }
       }
       else {
-          console.error("ASSISTANT_ID and THREAD_ID must be set in environment")
+          console.error("ASSISTANT_ID must be set in environment")
       }
  
       // Check if the response has the expected data
       if (response.length > 0) {
-        res.status(200).json({ answer: response[0] });
+        res.status(200).json(response[0]);
       } else {
         res.status(500).json({ error: 'Internal Error. Received no answer from the AI Assistant.' });
       }

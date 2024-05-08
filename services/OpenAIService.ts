@@ -15,12 +15,14 @@ export interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
+    threadId: string;
 }
 
 class OpenAIMessage implements Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
+    threadId: string;
 
 
 
@@ -29,6 +31,8 @@ class OpenAIMessage implements Message {
         this.id = message.id;
 
         this.role = message.role;
+
+        this.threadId = message.thread_id;
 
         this.content += message.content
             .filter(contentItem => contentItem.type === 'text')
@@ -126,50 +130,11 @@ export async function sendMessage(threadId: string, assistantId: string, message
     }
 }
 
-async function SendMessage(message: string, assistantId: string) {
-    //const myAssistants = await openai.beta.assistants.list();
-    //const myAssistant = await openai.beta.assistants.retrieve( assistantId );
-    //console.log(myAssistant);
+export async function createThread() : Promise<string> {
+    // Create a Thread
+    const threadResponse = await openai.beta.threads.create();
 
-    try {
-        // Create a Thread
-        const threadResponse = await openai.beta.threads.create();
-        const threadId = threadResponse.id;
-
-        // Add a Message to a Thread
-        await openai.beta.threads.messages.create(threadId, {
-            role: "user",
-            content: "Vad är din roll?"
-        });
-
-        // Run the Assistant
-        const runResponse = await openai.beta.threads.runs.create(threadId, {
-            assistant_id: assistantId
-        });
-
-        // Check the Run status
-        let run = await openai.beta.threads.runs.retrieve(threadId, runResponse.id);
-        while (run.status !== "completed") {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            run = await openai.beta.threads.runs.retrieve(threadId, runResponse.id);
-        }
-
-        // Display the Assistant's Response
-        const messagesResponse = await openai.beta.threads.messages.list(threadId);
-        const assistantResponses = messagesResponse.data.filter(msg => msg.role === 'assistant');
-        const response = assistantResponses.map(msg =>
-            msg.content
-                .filter(contentItem => contentItem.type === 'text')
-                .map(textContent => (textContent as TextContentBlock).text.value)
-                .join('\n')
-        ).join('\n');
-
-        console.log({ response });
-
-    } catch (error) {
-        console.error("Error processing chat:", error);
-    }
-
+    return threadResponse.id;
 }
 
 export async function receiveThread(threadId: string) {
@@ -184,7 +149,7 @@ export async function receiveThread(threadId: string) {
 
 
 
-export async function getThreadMessages(threadId: string, ascending: boolean): Promise<Message[]> {
+export async function getThreadMessages(threadId: string, ascending: boolean = true): Promise<Message[]> {
     let result: Message[] = [];
     try {
 
@@ -207,11 +172,6 @@ export async function getThreadMessages(threadId: string, ascending: boolean): P
 }
 
 
-const createThread = (threadId: string) => {
-    console.log(`Creating thread with ID: ${threadId}`);
-    // Add more logic here
-    throw new Error("Function not implemented.");
-};
 
 export async function removeThread(threadId: string) {
     //console.log(`Removing thread with ID: ${threadId}`);

@@ -2,9 +2,12 @@ import type { NextAuthOptions } from 'next-auth'
 import GitHubProvider from "next-auth/providers/github";
 import  CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from 'next-auth/providers/google';
+import LokiJsUserService from '@/services/LokiJsUserService';
+
+const userService = new LokiJsUserService();
 
 // Provide next-auth options
-const options: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
     // Configure your authentication providers here
     providers: [
         // Add your authentication providers here
@@ -89,29 +92,32 @@ const options: NextAuthOptions = {
     // newUser: null // If set, new users will be directed here on first sign in
   },
 
+  */
   // Callbacks are asynchronous functions you can use to control what happens
   // when an action is performed.
   // https://next-auth.js.org/configuration/callbacks
+  /* More callbacks here
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) { 
-        return true 
-    },
-    async redirect({ url, baseUrl }) { 
-        return baseUrl 
-    },
-    async jwt({ token, account }) {
-        // Persist the OAuth access_token to the token right after signin
-        if (account) {
-          token.accessToken = account.access_token
-        }
-        return token
-      },
-      async session({ session, token, user }) {
-        // Send properties to the client, like an access_token from a provider.
-        //session. = token.accessToken
-        return session
-      }
+    async session({ session, token, user }) {
+      // Send properties to the client, like an access_token from a provider.
+      session.fullName = userService.findUserByEmail(user.email).then((user) => user?.name)
+      //session. = token.accessToken
+      return session
+    }
   },
+  async signIn({ user, account, profile, email, credentials }) { 
+      return true 
+  },
+  },
+  async redirect({ url, baseUrl }) { 
+    return baseUrl 
+  async jwt({ token, account }) {
+      // Persist the OAuth access_token to the token right after signin
+      if (account) {
+        token.accessToken = account.access_token
+      }
+      return token
+    },
 
   // Events are useful for logging
   // https://next-auth.js.org/configuration/events
@@ -122,6 +128,6 @@ const options: NextAuthOptions = {
   */
 }
 
-export default options  
+export default authOptions  
 
 

@@ -9,7 +9,8 @@ import Image from 'next/image';
 
 const Home = () => {
   const [question, setQuestion] = useState<string>('');
-  const [messages, setMessages] = useState<Array<{ type: string, text: string }>>([]);
+  const [threadId, setThreadId] = useState<string>('');
+  const [messages, setMessages] = useState<Array<{ type: string, text: string, id: string }>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const endOfMessagesRef = useRef<null | HTMLDivElement>(null);
 
@@ -31,17 +32,20 @@ const Home = () => {
   const sendMessage = async () => {
     if (!question.trim()) return;
     setIsLoading(true);
-    setMessages(prev => [...prev, { type: 'user', text: question }, { type: 'bot', text: 'Processing...' }]);
+    setMessages(prev => [...prev, { type: 'user', text: question, id: '' }, { type: 'bot', text: 'Processing...', id: '' }]); // TODO: Add correct id
+
     const response = await fetch('/api/assistant', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, threadId }),
     });
     const data = await response.json();
     setIsLoading(false);
-    setMessages(prev => [...prev.slice(0, -1), { type: 'bot', text: data.answer || 'Error getting response' }]);
+    // Save the threadId for future messages
+    setThreadId(data.threadId);
+    setMessages(prev => [...prev.slice(0, -1), { type: 'bot', text: data.content || 'Error getting response', id: data.id }]);
     setQuestion('');
   };
 
