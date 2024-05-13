@@ -66,6 +66,7 @@ const Home = () => {
   const reloadMessages = async (threadId: string) => {
     // Fetch new chat data based on the threadId
     // Update the state of the chat container to trigger a re-render
+    // TODO: Handle scrolling of messages.
     setThreadId(threadId);
     setIsLoading(true);
     setMessages(prev => [...prev, { id: '', role: 'assistant', content: 'Processing...', threadId: ''}]); 
