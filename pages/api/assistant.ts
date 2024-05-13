@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       const assistantId = process.env.ASSISTANT_ID;
-      const response : OpenAIService.Message[] = [];
+      //let response : OpenAIService.Message[] = [];
       const message = req.body.question;
       let threadId = req.body.threadId;
       let action = req.body.action;
@@ -42,21 +42,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (assistantId != undefined) {
         
         if (action === 'sendMessage') {
-          console.log(`Sending message <${message}> to thread with ID: ${threadId}`);
-          await OpenAIService.sendMessage(threadId, assistantId, <OpenAIService.Message>{role: 'user', content: message});
-          
-          // Show the messages
-          const messages = await OpenAIService.getThreadMessages(threadId, false);
-  
-          if(messages.length > 1) {
-            //response.push(messages[1]);
-            response.push(messages[0]);
-          }
-          else {
-              console.error("No answer from the OpenAI service")
-          }
+          await sendMessage(message, threadId, assistantId, res);
         } else if (action === 'listMessages') {
-          response.push(...await OpenAIService.getThreadMessages(threadId, true));
+          // Show the messages
+          await listMessages(threadId, res);
         } else {
           console.error("Unknown action: ", action);
           res.status(500).json({ error: 'Internal Error. Received no answer from the AI Assistant.' });
@@ -70,11 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
  
       // Check if the response has the expected data
-      if (response.length > 0) {
-        res.status(200).json(response[0]);
-      } else {
-        res.status(500).json({ error: 'Internal Error. Received no answer from the AI Assistant.' });
-      }
     } catch (error) {
       console.error('Service call failed:', error);
       res.status(500).json({ error: 'Internal Error. Received no answer from the AI Assistant.' });
@@ -84,3 +68,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).end(`Method ${req.method} not allowed`);
   }
 }
+
+async function listMessages(threadId: any, res: NextApiResponse) {
+  const messages = await OpenAIService.getThreadMessages(threadId, true);
+  res.status(200).json(messages);
+}
+
+async function sendMessage(message: any, threadId: any, assistantId: string, res: NextApiResponse) {
+  console.log(`Sending message <${message}> to thread with ID: ${threadId}`);
+  await OpenAIService.sendMessage(threadId, assistantId, <OpenAIService.Message>{ role: 'user', content: message });
+
+  // Show the messages
+  const messages = await OpenAIService.getThreadMessages(threadId, false);
+
+  if (messages.length > 0) {
+    //response.push(messages[1]);
+    res.status(200).json(messages[0]);
+  } else {
+    console.error("No answer from the OpenAI service");
+    res.status(500).json({ error: 'Internal Error. Received no answer from the AI Assistant.' });
+  }
+}
+

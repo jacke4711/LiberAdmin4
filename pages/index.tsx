@@ -5,6 +5,7 @@ import { useSession, getSession } from "next-auth/react"
 //import "../styles/globals.css";
 import styles from '../styles/LiberAdmin.module.css';
 import Image from 'next/image';
+import { Message } from '@/services/OpenAIService';
 /*import UserThreads from '@/app/ui/UserThreads';
 import {
   UserThreadsSkeleton,
@@ -15,7 +16,7 @@ import {
 const Home = () => {
   const [question, setQuestion] = useState<string>('');
   const [threadId, setThreadId] = useState<string>('');
-  const [messages, setMessages] = useState<Array<{ type: string, text: string, id: string }>>([]);
+  const [messages, setMessages] = useState<Array<Message>>([]);
   const [userThreads, setUserThreads] = useState<Array<{ userId: string, threadId: string, title: string }>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const endOfMessagesRef = useRef<null | HTMLDivElement>(null);
@@ -38,7 +39,7 @@ const Home = () => {
   const sendMessage = async () => {
     if (!question.trim()) return;
     setIsLoading(true);
-    setMessages(prev => [...prev, { type: 'user', text: question, id: '' }, { type: 'bot', text: 'Processing...', id: '' }]); // TODO: Add correct id
+    setMessages(prev => [...prev, { id: '', role: 'user', content: question, threadId: ''}, { id: '', role: 'assistant', content: 'Processing...', threadId: ''}]); // TODO: Add correct id
 
     const response = await fetch('/api/assistant', {
       method: 'POST',
@@ -51,7 +52,7 @@ const Home = () => {
     setIsLoading(false);
     // Save the threadId for future messages
     setThreadId(data.threadId);
-    setMessages(prev => [...prev.slice(0, -1), { type: 'bot', text: data.content || 'Error getting response', id: data.id }]);
+    setMessages(prev => [...prev.slice(0, -1), data]);
     setQuestion('');
   };
 
@@ -65,8 +66,9 @@ const Home = () => {
   const reloadMessages = async (threadId: string) => {
     // Fetch new chat data based on the threadId
     // Update the state of the chat container to trigger a re-render
+    setThreadId(threadId);
     setIsLoading(true);
-    setMessages(prev => [...prev, { type: 'user', text: question, id: '' }, { type: 'bot', text: 'Processing...', id: '' }]); // TODO: Add correct id
+    setMessages(prev => [...prev, { id: '', role: 'assistant', content: 'Processing...', threadId: ''}]); 
 
     const response = await fetch('/api/assistant', {
       method: 'POST',
@@ -78,8 +80,8 @@ const Home = () => {
     const data = await response.json();
     setIsLoading(false);
     // Save the threadId for future messages
-    setThreadId(data.threadId);
-    setMessages(prev => [...prev.slice(0, -1), { type: 'bot', text: data.content || 'Error getting response', id: data.id }]);
+    //setMessages(prev => [...prev.slice(0, -1), ...data]);
+    setMessages(data);
     setQuestion('');
 
   };
@@ -138,8 +140,8 @@ const Home = () => {
       <div className={styles['chat-container']}>
         <div className={styles['messages']}>
           {messages.map((msg, index) => (
-            <div key={index} className={`${styles['message']} ${styles[msg.type]}`}>
-              {msg.text}
+            <div key={index} className={`${styles['message']} ${styles[msg.role]}`}>
+              {msg.content}
             </div>
           ))}
           <div ref={endOfMessagesRef}></div>
