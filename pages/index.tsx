@@ -1,16 +1,22 @@
-import { useState, FormEvent, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, FormEvent, useRef, useEffect, KeyboardEvent, Suspense } from 'react';
 import { GetServerSideProps } from "next"
 import type { Session } from "next-auth"
 import { useSession, getSession } from "next-auth/react"
 //import "../styles/globals.css";
 import styles from '../styles/LiberAdmin.module.css';
 import Image from 'next/image';
+/*import UserThreads from '@/app/ui/UserThreads';
+import {
+  UserThreadsSkeleton,
+} from '@/app/ui/skeletons';
+*/
 
 
 const Home = () => {
   const [question, setQuestion] = useState<string>('');
   const [threadId, setThreadId] = useState<string>('');
   const [messages, setMessages] = useState<Array<{ type: string, text: string, id: string }>>([]);
+  const [userThreads, setUserThreads] = useState<Array<{ userId: string, threadId: string, title: string }>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const endOfMessagesRef = useRef<null | HTMLDivElement>(null);
 
@@ -39,7 +45,7 @@ const Home = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ question, threadId }),
+      body: JSON.stringify({ action: 'sendMessage', question, threadId }),
     });
     const data = await response.json();
     setIsLoading(false);
@@ -56,15 +62,69 @@ const Home = () => {
     }
   };
 
+  const reloadMessages = async (threadId: string) => {
+    // Fetch new chat data based on the threadId
+    // Update the state of the chat container to trigger a re-render
+    setIsLoading(true);
+    setMessages(prev => [...prev, { type: 'user', text: question, id: '' }, { type: 'bot', text: 'Processing...', id: '' }]); // TODO: Add correct id
+
+    const response = await fetch('/api/assistant', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'listMessages', threadId }),
+    });
+    const data = await response.json();
+    setIsLoading(false);
+    // Save the threadId for future messages
+    setThreadId(data.threadId);
+    setMessages(prev => [...prev.slice(0, -1), { type: 'bot', text: data.content || 'Error getting response', id: data.id }]);
+    setQuestion('');
+
+  };
+
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch('/api/UserThreadsApi', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+      setUserThreads(data);
+    };
+
+    fetchData();
+  }, []);
+
   return (
 
     <div className={styles['app-container']}>
-      <div className={styles.sidebar}>
+      <div className={styles['sidebar']}>
         Threads or Other Information
+        {/* 
+        <Suspense fallback={<UserThreadsSkeleton />}>
+          <UserThreads />
+        </Suspense> 
+        */}
+        {userThreads.map((thread, i) => {
+          return (
+            <div key={thread.threadId} className={styles['thread']}>
+              <button onClick={() => reloadMessages(thread.threadId)}>
+                {thread.title}
+              </button>
+            </div>
+          );
+        })}
+
+        <div className={styles['user_panel']}>
         <Image
           src={session?.user?.image as string}
           alt="User image"
@@ -73,16 +133,17 @@ const Home = () => {
           className={styles['small-rounded-image']}
         />
         {session?.user?.name}
+        </div>
       </div>
       <div className={styles['chat-container']}>
-        <div className={styles.messages}>
+        <div className={styles['messages']}>
           {messages.map((msg, index) => (
-            <div key={index} className={`message ${msg.type}`}>
+            <div key={index} className={`${styles['message']} ${styles[msg.type]}`}>
               {msg.text}
             </div>
           ))}
           <div ref={endOfMessagesRef}></div>
-          {isLoading && <div className={styles.loader}>Loading...</div>}
+          {isLoading && <div className={styles['loader']}>Loading...</div>}
         </div>
         <div className={styles['predefined-questions']}>
           {predefinedQuestions.map((q, index) => (
@@ -105,7 +166,7 @@ const Home = () => {
     </div>
   );
 };
-//<style jsx>{styles.LiberAdmin}</style>
+//<style jsx>{styles['LiberAdmin}</style>
 
 // Export the `session` prop to use sessions with Server Side Rendering
 export const getServerSideProps: GetServerSideProps<{

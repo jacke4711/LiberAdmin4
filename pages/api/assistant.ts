@@ -8,20 +8,21 @@ import  authOptions  from '@/auth';
 import { getServerSession } from 'next-auth';
 import LokiUserThreadService from '@/services/LokiUserThreadService';
 //import { getSession } from "next-auth/react"
+const userThreadsService = await (LokiUserThreadService.service())
 
-const lokiUserThreadService = new LokiUserThreadService();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   //const session = await getSession({ req: req })//getServerSession(authOptions);
   const session = await getServerSession(req, res, authOptions);
-  
+  let userId: string = "";  
 
-  if (!session || session.user === null || session.user?.email === null) {
-    //redirect('/api/auth/signin?callbackUrl=/protected');
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Must be logged in to use the assistant`);
+  if (!session || !session.user || !session.user.email) {
+    res.status(401).json({ message: 'You must be logged in to access this resource.' });
     return;
+  } else {
+    userId = session.user.email;
   }
+
   
   if (req.method === 'POST') {
     try {
@@ -29,17 +30,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const response : OpenAIService.Message[] = [];
       const message = req.body.question;
       let threadId = req.body.threadId;
+      let action = req.body.action;
       
-      console.log(`Sending message <${message}> to thread with ID: ${threadId}`);
       // Create a thread if it does not exist
       if (threadId === undefined || threadId === "") {
         threadId = await OpenAIService.createThread();
         // Save the threadId for the current user
-        let userId = session?.user?.email ? session?.user?.email : ""; // Checked above so should be safe, but still need to check  
-        lokiUserThreadService.addUserThread(userId, threadId, new Date().toISOString() + " - " + message); // TODO: Better title needed
+        userThreadsService.addUserThread(userId, threadId, new Date().toISOString() + " - " + message); // TODO: Better title needed
       }
-
-      if (assistantId != undefined) { 
+      
+      if (assistantId != undefined) {
+        
+        if (action === 'sendMessage') {
+          console.log(`Sending message <${message}> to thread with ID: ${threadId}`);
           await OpenAIService.sendMessage(threadId, assistantId, <OpenAIService.Message>{role: 'user', content: message});
           
           // Show the messages
@@ -52,6 +55,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           else {
               console.error("No answer from the OpenAI service")
           }
+        } else if (action === 'listMessages') {
+          response.push(...await OpenAIService.getThreadMessages(threadId, true));
+        } else {
+          console.error("Unknown action: ", action);
+          res.status(500).json({ error: 'Internal Error. Received no answer from the AI Assistant.' });
+          return
+        }
+
+
       }
       else {
           console.error("ASSISTANT_ID must be set in environment")

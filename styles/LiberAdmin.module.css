@@ -136,6 +136,17 @@
     object-fit: cover; /* This makes the image cover the entire space of the div, cropping if necessary */
 }
 
+.thread {
+    background-color: white;
+    color: blueviolet;
+    align-self: flex-start;
+}
+
+.user_panel {
+    background-color: green;
+    color: white;
+    align-self: flex-end;
+}
 
 
 @-webkit-keyframes load1 {
