@@ -67,8 +67,8 @@ const Home = () => {
     // Fetch new chat data based on the threadId
     // Update the state of the chat container to trigger a re-render
     // TODO: Handle scrolling of messages.
-    setThreadId(threadId);
     setIsLoading(true);
+    setThreadId(threadId);
     setMessages(prev => [...prev, { id: '', role: 'assistant', content: 'Processing...', threadId: ''}]); 
 
     const response = await fetch('/api/assistant', {
@@ -79,11 +79,11 @@ const Home = () => {
       body: JSON.stringify({ action: 'listMessages', threadId }),
     });
     const data = await response.json();
-    setIsLoading(false);
     // Save the threadId for future messages
     //setMessages(prev => [...prev.slice(0, -1), ...data]);
     setMessages(data);
     setQuestion('');
+    setIsLoading(false);
 
   };
 

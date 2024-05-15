@@ -37,3 +37,7 @@ next-env.d.ts
 
 #admin
 admin/out/
+
+#loki.js databases
+users.db
+userThreads.db
